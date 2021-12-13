@@ -1,0 +1,10 @@
+Private Sub CancelButton_Click()
+UserForm1.Hide
+End Sub
+
+
+Private Sub RunScrubber_Click()
+ThisDocument.RunScrub (TextBox1.Text)
+TextBox1.Text = ""
+UserForm1.Hide
+End Sub
