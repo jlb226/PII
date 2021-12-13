@@ -1,0 +1,267 @@
+Private Sub RunScrubber_Click()
+
+UserForm1.Show
+
+End Sub
+
+
+Sub RunScrub(wordList)
+
+Dim oDoc As Document
+Dim strDocName As String
+Dim intPos As Integer
+Dim lengthName As String
+
+'MsgBox (wordList)
+
+For Each oDoc In Documents
+
+If oDoc <> "scrubber.docm" Then
+
+FindPhoneNumbers (oDoc)
+FindEmailAddresses (oDoc)
+FindSSNs (oDoc)
+FindURLs (oDoc)
+'FindAcronymsAndCapitalizedWords (oDoc)
+FindOtherWords oDoc, wordList
+
+strDocName = oDoc
+lengthName = Len(oDoc)
+intPos = InStrRev(strDocName, ".")
+strDocName = Left(strDocName, intPos - 1)
+strDocExt = Right(oDoc, lengthName - intPos)
+strDocName = strDocName & "_SCRUBBED." & strDocExt
+oDoc.SaveAs2 FileName:=strDocName
+
+End If
+
+Next
+lbl_Exit:
+Application.ScreenUpdating = True
+Application.ScreenRefresh
+
+Exit Sub
+
+End Sub
+
+
+Sub FindPhoneNumbers(oDoc)
+
+'Find Phone Numbers
+Dim StrTxt As String
+StrTxt = "|"
+
+With Documents(oDoc).Range
+  With .Find
+    .ClearFormatting
+    .Replacement.ClearFormatting
+    .Text = "[0-9]{3}-[0-9]{4}"
+    .Replacement.Text = ""
+    .Forward = True
+    .Wrap = wdFindStop
+    .Format = False
+    .MatchWildcards = True
+    .Execute
+  End With
+
+  Do While .Find.Found
+    .HighlightColorIndex = wdRed
+    If InStr(StrTxt, .Duplicate.Text) = 0 Then StrTxt = StrTxt & .Duplicate.Text & "|"
+    .Collapse wdCollapseEnd
+    .Find.Execute
+  Loop
+
+End With
+
+End Sub
+
+
+Sub FindEmailAddresses(oDoc)
+
+'Find Email Addresses
+Dim StrOut As String
+
+With Documents(oDoc).Range
+  With .Find
+    .ClearFormatting
+    .Replacement.ClearFormatting
+    .Text = "<[0-9A-ÿ.\-]{1,}\@[0-9A-ÿ\-.]{1,}([^13 -/\:-\@\\-`\{-¿])"
+    .Replacement.Text = ""
+    .Forward = True
+    .Format = False
+    .Wrap = wdFindStop
+    .MatchWildcards = True
+    .Execute
+  End With
+
+  Do While .Find.Found
+    .HighlightColorIndex = wdBrightGreen
+    StrOut = StrOut & Trim(.Text) & " "
+    .Collapse wdCollapseEnd
+    .Find.Execute
+  Loop
+
+End With
+
+StrOut = Replace(Trim(StrOut), " ", "; ")
+
+End Sub
+
+
+
+
+Sub FindSSNs(oDoc)
+
+'Find SSNs
+Dim StrTxt As String
+StrTxt = "|"
+
+With Documents(oDoc).Range
+  With .Find
+    .ClearFormatting
+    .Replacement.ClearFormatting
+    .Text = "[0-9]{3}-[0-9]{2}-[0-9]{4}"
+    .Replacement.Text = ""
+    .Forward = True
+    .Wrap = wdFindStop
+    .Format = False
+    .MatchWildcards = True
+    .Execute
+  End With
+
+  Do While .Find.Found
+    .HighlightColorIndex = wdYellow
+    If InStr(StrTxt, .Duplicate.Text) = 0 Then StrTxt = StrTxt & .Duplicate.Text & "|"
+    .Collapse wdCollapseEnd
+    .Find.Execute
+  Loop
+
+End With
+
+End Sub
+
+ 
+
+ 
+
+Sub FindURLs(oDoc)
+
+'Find URLs
+
+Dim StrOut As String
+
+With Documents(oDoc).Range
+  With .Find
+    .ClearFormatting
+    .Replacement.ClearFormatting
+    .Text = "http://[0-9A-ÿ\-.]{1,}([^13 -/\:-\@\\-`\{-¿])"
+    .Replacement.Text = ""
+    .Forward = True
+    .Format = False
+    .Wrap = wdFindStop
+    .MatchWildcards = True
+    .Execute
+  End With
+
+  Do While .Find.Found
+    .HighlightColorIndex = wdBlue
+    StrOut = StrOut & Trim(.Text) & " "
+    .Collapse wdCollapseEnd
+    .Find.Execute
+  Loop
+
+End With
+
+With Documents(oDoc).Range
+  With .Find
+    .ClearFormatting
+    .Replacement.ClearFormatting
+    .Text = "https://[0-9A-ÿ\-.]{1,}([^13 -/\:-\@\\-`\{-¿])"
+    .Replacement.Text = ""
+    .Forward = True
+    .Format = False
+    .Wrap = wdFindStop
+    .MatchWildcards = True
+    .Execute
+  End With
+
+  Do While .Find.Found
+    .HighlightColorIndex = wdBlue
+    StrOut = StrOut & Trim(.Text) & " "
+    .Collapse wdCollapseEnd
+    .Find.Execute
+  Loop
+
+End With
+
+StrOut = Replace(Trim(StrOut), " ", "; ")
+
+End Sub
+
+
+
+'Sub FindAcronymsAndCapitalizedWords(oDoc)
+''Find Acronyms and Capitalized Words
+'Dim StrTxt As String
+'StrTxt = "|"
+'With Documents(oDoc).Range
+'  With .Find
+'      .ClearFormatting
+'      .Text = "[A-Z]{2,}"
+'      .Replacement.Text = ""
+'      .Forward = True
+'      .Wrap = wdFindContinue
+'      .Format = False
+'      .MatchWildcards = True
+'      .Execute
+'    End With
+'
+'    Do While .Find.Found
+'      'Set objRange = Selection.Range
+'      .HighlightColorIndex = wdPink
+'      .Collapse wdCollapseEnd
+'      .Find.Execute
+'    Loop
+'End With
+
+'End Sub
+
+ 
+
+
+Sub FindOtherWords(oDoc, wordList)
+
+
+Dim additionalWords() As String
+Dim w As Variant
+
+additionalWords() = Split(wordList, ";")
+
+For Each w In additionalWords()
+Dim StrTxt As String
+StrTxt = "|"
+
+With Documents(oDoc).Range
+  With .Find
+    .ClearFormatting
+    .Replacement.ClearFormatting
+    .Text = w '"[0-9]{3}-[0-9]{2}-[0-9]{4}"
+    .Replacement.Text = ""
+    .Forward = True
+    .Wrap = wdFindStop
+    .Format = False
+    .MatchWildcards = True
+    .Execute
+  End With
+
+  Do While .Find.Found
+    .HighlightColorIndex = wdGray25 'wdTeal 'wdViolet 'wdGray50
+    If InStr(StrTxt, .Duplicate.Text) = 0 Then StrTxt = StrTxt & .Duplicate.Text & "|"
+    .Collapse wdCollapseEnd
+    .Find.Execute
+  Loop
+End With
+
+Next
+
+End Sub
